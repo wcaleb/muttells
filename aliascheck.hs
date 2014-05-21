@@ -22,7 +22,7 @@ validAlias :: Parser [Char] st [Char]
 validAlias = try $ do
 	preAlias
    	-- next line mostly works!
-   	rest <- manyTill word (try $ emailAddress >> newline)
+   	rest <- manyTill word (try $ (emailAddress <|> angEmail) >> newline)
    	return (concat rest)
 
 word = manyTill (noneOf "\n") space
