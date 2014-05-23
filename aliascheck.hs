@@ -10,10 +10,10 @@ readLine input = case parse line "" input of
 	Right val -> input
 
 line :: Parser [Char] st [Char]
-line = comment <|> validAlias
+line = validAlias <|> comment
 
-comment :: Parser [Char] st [Char]
-comment = string "#" >> manyTill (noneOf "\n\r") newline
+word = manyTill (noneOf "\n") space
+nickname = many (noneOf " ,\n")
 
 preAlias :: Parser [Char] st [Char]
 preAlias = string "alias " >> manyTill anyChar space
@@ -22,10 +22,19 @@ validAlias :: Parser [Char] st [Char]
 validAlias = try $ do
 	preAlias
    	-- next line mostly works!
-   	rest <- manyTill word (try $ (emailAddress <|> angEmail) >> newline)
+   	rest <- manyTill word (try $ (emailAddress <|> angEmail))
    	return (concat rest)
 
-word = manyTill (noneOf "\n") space
+-- this mostly works, but not if there is trailing whitespace
+groupAlias :: Parser [Char] st [[Char]]
+groupAlias = do 
+	preAlias
+	nicknames <- sepBy nickname (spaces >> char ',' >> spaces)
+	-- this isn't actually what I want to return
+	return nicknames
+
+comment :: Parser [Char] st [Char]
+comment = string "#" >> manyTill (noneOf "\n\r") newline
 
 angEmail = do
 	char '<'
