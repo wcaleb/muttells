@@ -1,40 +1,39 @@
 import Text.Parsec 
-import Data.Char
-import Data.List (intercalate, concat)
+-- import Data.Char
+import Data.List (intercalate)
 
 type Parser t s = Parsec t s
 
-readLine :: [Char] -> [Char]
-readLine input = case parse line "" input of
-	Left err -> '#':input
-	Right val -> input
+-- line, aliasFile, preAlias, validAlias, comment, groupAlias ::
+--	Parser [Char] st [Char]
 
-line :: Parser [Char] st [Char]
-line = validAlias <|> comment
+aliasFile = endBy line newline
 
-word = manyTill (noneOf "\n") space
-nickname = many (noneOf " ,\n")
+line = try validAlias <|> groupAlias <|> comment
 
-preAlias :: Parser [Char] st [Char]
-preAlias = string "alias " >> manyTill anyChar space
-
-validAlias :: Parser [Char] st [Char]
-validAlias = try $ do
+validAlias = do
 	preAlias
    	-- next line mostly works!
-   	rest <- manyTill word (try $ (emailAddress <|> angEmail))
-   	return (concat rest)
+   	rest <- manyTill (noneOf "\n") (try $ (emailAddress <|> angEmail))
+   	return rest
 
--- this mostly works, but not if there is trailing whitespace
-groupAlias :: Parser [Char] st [[Char]]
 groupAlias = do 
 	preAlias
+	-- this mostly works, but not if there is trailing whitespace
 	nicknames <- sepBy nickname (spaces >> char ',' >> spaces)
 	-- this isn't actually what I want to return
-	return nicknames
+	return (concat nicknames)
 
-comment :: Parser [Char] st [Char]
-comment = string "#" >> manyTill (noneOf "\n\r") newline
+comment = string "#" >> many (noneOf "\n")
+
+nickname = many (noneOf " ,\n")
+
+readLine :: [Char] -> [Char]
+readLine input = case parse line "" input of
+	Left _ -> '#':input
+	Right _ -> input
+
+preAlias = string "alias " >> manyTill anyChar space
 
 angEmail = do
 	char '<'
