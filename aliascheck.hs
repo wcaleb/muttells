@@ -4,6 +4,8 @@ import Data.List (intercalate)
 
 type Parser t s = Parsec t s
 
+main = interact readF
+
 rawLine, validLine, preAlias, validAlias, comment, groupAlias ::
   	Parser [Char] st [Char]
 
@@ -17,8 +19,10 @@ readLine input = case parse validLine "" input of
 	Left _ -> '#':input
 	Right _ -> input 
 
-readFile :: [Char] -> [[Char]]
-readFile input = map readLine (either (const $ error "Couldn't parse file") id (parse aliasFile "" input))
+readF :: [Char] -> [Char]
+readF = unlines . map readLine . lines 
+
+-- (either (const $ error "Couldn't parse file") id (parse aliasFile "" input))
 
 validAlias = do
 	_ <- preAlias
