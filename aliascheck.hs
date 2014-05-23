@@ -9,7 +9,7 @@ type Parser t s = Parsec t s
 
 aliasFile = endBy line newline
 
-line = try validAlias <|> groupAlias <|> comment
+line = try comment <|> try groupAlias <|> validAlias
 
 validAlias = do
 	preAlias
@@ -20,7 +20,7 @@ validAlias = do
 groupAlias = do 
 	preAlias
 	-- this mostly works, but not if there is trailing whitespace
-	nicknames <- sepBy nickname (spaces >> char ',' >> spaces)
+	nicknames <- sepBy nickname (skipMany (char ' ') >> char ',' >> skipMany (char ' '))
 	-- this isn't actually what I want to return
 	return (concat nicknames)
 
@@ -34,12 +34,6 @@ readLine input = case parse line "" input of
 	Right _ -> input
 
 preAlias = string "alias " >> manyTill anyChar space
-
-angEmail = do
-	char '<'
-	address <- emailAddress
-	char '>' <?> "closing angle bracket"
-	return address
 
 -- Using old emailAddress parser from Pandoc
 -- https://github.com/jgm/pandoc/blob/a71641a2a04c1d324163e16299f1e9821a26c9f9/src/Text/Pandoc/Parsing.hs
@@ -68,3 +62,10 @@ emailAddress = try $ do
     dom <- domain
     let full = addr ++ '@':dom
     return full
+
+angEmail = do
+	char '<'
+	address <- emailAddress
+	char '>' <?> "closing angle bracket"
+	return address
+
