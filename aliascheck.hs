@@ -4,8 +4,8 @@ import Data.List (intercalate)
 
 type Parser t s = Parsec t s
 
--- line, aliasFile, preAlias, validAlias, comment, groupAlias ::
---	Parser [Char] st [Char]
+line, preAlias, validAlias, comment, groupAlias ::
+  	Parser [Char] st [Char]
 
 aliasFile = endBy line newline
 
@@ -14,12 +14,11 @@ line = try comment <|> try groupAlias <|> validAlias
 validAlias = do
 	preAlias
    	-- next line mostly works!
-   	rest <- manyTill (noneOf "\n") (try $ (emailAddress <|> angEmail))
+   	rest <- manyTill (noneOf "\n") (try $ ( angEmail <|> emailAddress ))
    	return rest
 
 groupAlias = do 
 	preAlias
-	-- this mostly works, but not if there is trailing whitespace
 	nicknames <- sepBy nickname (skipMany (char ' ') >> char ',' >> skipMany (char ' '))
 	-- this isn't actually what I want to return
 	return (concat nicknames)
