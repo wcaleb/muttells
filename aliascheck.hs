@@ -1,54 +1,42 @@
 import Text.Parsec 
--- import Data.Char
-import Data.List (intercalate)
+import Data.List (intercalate, sort)
 
 type Parser t s = Parsec t s
 
-main = interact readF
+main :: IO ()
+main = interact (unlines . sort . map checkLine . lines)
 
-rawLine, validLine, preAlias, validAlias, comment, groupAlias ::
-  	Parser [Char] st [Char]
+preAlias, validAlias, comment, groupAlias, angEmail :: Parsec [Char] st [Char]
 
-aliasFile = endBy rawLine newline
-rawLine = many (noneOf "\n")
-
-validLine = try comment <|> try groupAlias <|> validAlias
-
-readLine :: [Char] -> [Char]
-readLine input = case parse validLine "" input of 
+checkLine :: [Char] -> [Char]
+checkLine input = case parse validLine "" input of 
 	Left _ -> '#':input
 	Right _ -> input 
-
-readF :: [Char] -> [Char]
-readF = unlines . map readLine . lines 
-
--- (either (const $ error "Couldn't parse file") id (parse aliasFile "" input))
+	where validLine = try comment <|> try groupAlias <|> validAlias
 
 validAlias = do
-	_ <- preAlias
-   	-- next line mostly works!
-   	rest <- manyTill (noneOf "\n") (try $ ( angEmail <|> emailAddress ))
-   	return rest
+	_ <- preAlias >>
+         manyTill (noneOf "<>\n") (try $ ( angEmail <|> emailAddress ))
+	notFollowedBy anyToken <?> "end of input"
+   	return "valid single alias"
 
 groupAlias = do 
-	_ <- preAlias
-	nicknames <- sepBy nickname (skipMany (char ' ') >> char ',' >> skipMany (char ' '))
-	-- this isn't actually what I want to return
-	return (concat nicknames)
+	_ <- preAlias >> nickname >> nicknameSep 
+	_ <- sepBy nickname nicknameSep
+	return "valid group alias"
+	where
+      nickname = many (noneOf " ,\n")
+      nicknameSep = skipMany (char ' ') >> char ',' >> skipMany (char ' ')
 
 comment = string "#" >> many (noneOf "\n")
-
-nickname = many (noneOf " ,\n")
 
 preAlias = string "alias " >> manyTill anyChar space
 
 angEmail = do
-	char '<'
-	address <- emailAddress
-	char '>' <?> "closing angle bracket"
-	return address
+	_ <- char '<' >> emailAddress >> char '>'
+	return "bracketed email address"
 
--- Using old emailAddress parser from Pandoc
+-- Using modified old emailAddress parser from Pandoc
 -- https://github.com/jgm/pandoc/blob/a71641a2a04c1d324163e16299f1e9821a26c9f9/src/Text/Pandoc/Parsing.hs
 
 emailChar :: Parser [Char] st Char
@@ -68,7 +56,9 @@ emailWord = many1 emailChar  -- ignores possibility of quoted strings
 emailAddress :: Parser [Char] st String
 emailAddress = try $ do
     firstLetter <- alphaNum
-    x <- emailWord
+	-- next line accounts for emails starting with one initial and dot
+	-- but such "early dot" cases not returned in full
+    x <- try $ char '.' >> emailWord
     xs <- many (try $ char '.' >> emailWord)
     let addr = firstLetter : (intercalate "." (x:xs))
     char '@'
