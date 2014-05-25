@@ -1,4 +1,5 @@
 import Text.Parsec 
+import Data.Maybe (maybeToList)
 import Data.List (intercalate, sort)
 
 type Parser t s = Parsec t s
@@ -16,7 +17,7 @@ checkLine input = case parse validLine "" input of
 
 validAlias = do
 	_ <- preAlias >>
-         manyTill (noneOf "<>\n") (try $ ( angEmail <|> emailAddress ))
+         manyTill (noneOf "<>\n") (try ( angEmail <|> emailAddress ))
 	notFollowedBy anyToken <?> "end of input"
    	return "valid single alias"
 
@@ -42,6 +43,7 @@ angEmail = do
 emailChar :: Parser [Char] st Char
 emailChar = alphaNum <|> oneOf "!\"#$%&'*+-/0123456789=?^_{|}~"
 
+domain :: Parser [Char] st [Char]
 domain = do
   x <- subdomain
   xs <- many (try $ char '.' >> subdomain)
@@ -56,13 +58,11 @@ emailWord = many1 emailChar  -- ignores possibility of quoted strings
 emailAddress :: Parser [Char] st String
 emailAddress = try $ do
     firstLetter <- alphaNum
-	-- next line accounts for emails starting with one initial and dot
-	-- but such "early dot" cases not returned in full
-    x <- try $ char '.' >> emailWord
+    firstDot <- optionMaybe (char '.')
+    x <- emailWord
     xs <- many (try $ char '.' >> emailWord)
-    let addr = firstLetter : (intercalate "." (x:xs))
-    char '@'
+    let addr = (firstLetter : maybeToList firstDot) ++ intercalate "." (x:xs)
+    _ <- char '@'
     dom <- domain
     let full = addr ++ '@':dom
     return full
-
