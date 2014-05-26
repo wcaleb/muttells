@@ -7,11 +7,18 @@ import Data.List (intercalate, sort)
 
 type Parser t s = Parsec t s
 
+-- As written, program takes path to Mutt alias file as a single argument.
+-- It checks each line of file for a valid alias, comments out invalid ones with '#'
+-- and then writes new content back to the same file, sorted so that comments
+-- appear at top for closer inspection.
+
 main :: IO ()
 main = do
     args <- getArgs
     case args of
       [f] -> do
+        -- yitz on #haskell suggests Data.Text.IO.readFile for strict readFile
+        -- that would eliminate need for the length test, which forces readFile
         contents <- readFile f
         length contents `seq` writeFile f (process contents)
         where process = unlines . sort . map checkLine . lines
