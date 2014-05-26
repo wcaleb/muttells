@@ -1,3 +1,6 @@
+import System.Environment
+import System.Exit
+import System.IO
 import Text.Parsec 
 import Data.Maybe (maybeToList)
 import Data.List (intercalate, sort)
@@ -5,7 +8,17 @@ import Data.List (intercalate, sort)
 type Parser t s = Parsec t s
 
 main :: IO ()
-main = interact (unlines . sort . map checkLine . lines)
+main = do
+    args <- getArgs
+    case args of
+      [f] -> do
+        contents <- readFile f
+        length contents `seq` writeFile f (process contents)
+        where process = unlines . sort . map checkLine . lines
+      _ -> do
+        progName <- getProgName
+        hPutStrLn stderr $ "Usage: " ++ progName ++ " path/to/aliasfile"
+        exitWith (ExitFailure 1)
 
 preAlias, validAlias, comment, groupAlias, angEmail :: Parsec String st String
 
