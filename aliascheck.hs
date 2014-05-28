@@ -1,33 +1,16 @@
-import System.Environment
-import System.Exit
-import System.IO
+-- import System.Environment
+-- import System.Exit
+-- import System.IO
 import Text.Parsec 
 import Data.Maybe (maybeToList)
 import Data.List (intercalate, sort)
 
 type Parser t s = Parsec t s
 
--- As written, program takes path to Mutt alias file as a single argument.
--- It checks each line of file for a valid alias, comments out invalid ones with '#'
--- and then writes new content back to the same file, sorted so that comments
--- appear at top for closer inspection.
-
 main :: IO ()
-main = do
-    args <- getArgs
-    case args of
-      [f] -> do
-        -- yitz on #haskell suggests Data.Text.IO.readFile for strict readFile
-        -- that would eliminate need for the length test, which forces readFile
-        contents <- readFile f
-        length contents `seq` writeFile f (process contents)
-        where process = unlines . sort . map checkLine . lines
-      _ -> do
-        progName <- getProgName
-        hPutStrLn stderr $ "Usage: " ++ progName ++ " path/to/aliasfile"
-        exitWith (ExitFailure 1)
+main = interact (unlines . sort . map checkLine . lines)
 
-preAlias, validAlias, comment, groupAlias, angEmail :: Parsec String st String
+preAlias, validAlias, comment, groupAlias, angEmail :: Parser String st String
 
 checkLine :: String -> String
 checkLine input = case parse validLine "" input of 
