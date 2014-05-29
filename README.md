@@ -37,7 +37,7 @@ In practice, the best way to use this may be by setting your muttrc file to sour
 
 You can use Mutt's config file "backtick" feature to generate a temporary, validated alias file every time Mutt launches:
 
-	source `aliascheck < ~/.mutt/aliases.txt > /tmp/valid-aliases.txt; echo /tmp/muttaliases.txt`
+	source `aliascheck < ~/.mutt/aliases.txt > /tmp/valid-aliases.txt; echo /tmp/valid-aliases.txt`
 
 Since the program is a filter, you can also call it from within an editor like Vim while editing your mutt file. Commented out lines will be sorted and listed at the top so that you can delete invalid aliases from time to time.
 
