@@ -45,3 +45,10 @@ Since the program is a filter, you can also call it from within an editor like V
 
 This script is very rudimentary, but what I'm hoping is to write something capable of pretty printing emails, sort of like [muttprint](http://muttprint.sourceforge.net).
 
+If you want to use it as is, compile `muttdoc.hs` using `ghc --make`, and then set your Mutt `print_command` to something like this:
+
+	set print_command="muttdoc | pandoc --template=email.tex -V fullpage --latex-engine=xelatex --listings -o ~/Desktop/email.pdf
+
+The LaTeX template used in that command is [in my pandoc-templates repo](https://github.com/wcaleb/pandoc-templates/blob/master/email.tex).
+
+
