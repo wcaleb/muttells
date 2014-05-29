@@ -3,7 +3,7 @@ muttells
 
 These little tools were written for users of the [Mutt email client](http://www.mutt.org). I wrote them because I have been wanting to learn some Haskell, so beware of newbie mistakes. But they might be useful to others.
 
-Ideas and comments about this learning exercise are welcome. If anyone does the binaries of `aliascheck` and `addalias` I have released, I would especially appreciate it if you could test them on your Mutt install and report any issues you encounter.
+Ideas and comments about this learning exercise are welcome. If anyone does [download and use the binaries](https://github.com/wcaleb/muttells/releases/latest) of `aliascheck` and `addalias` I have released, I would especially appreciate it if you could test them on your Mutt install and report any issues you encounter.
 
 ## addalias
 
