@@ -6,7 +6,7 @@ module Muttells
 
 import Text.Parsec 
 import Data.Maybe (maybeToList)
-import Data.List (intercalate)
+import Data.List (intercalate, isInfixOf)
 
 type Parser t s = Parsec t s
 
@@ -31,10 +31,14 @@ getBody = unlines . dropWhile (/= []) . lines
 -- Mutt alias parsers --
 ------------------------
 
+stopWords :: [String]
+stopWords = [ "notification", "notifications", "do-not-reply", "no-reply", "noreply", "donotreply" ]
+
 checkAlias :: String -> String
 checkAlias input = case parse validLine "" input of 
     Left _ -> '#':input
-    Right _ -> input 
+    Right _ -> if any (`isInfixOf` input) stopWords then '#':input else input
+    -- NB: if you don't want to use stopwords, use "Right _ -> input" instead
     where validLine = try comment <|> try groupAlias <|> validAlias
 preAlias, validAlias, comment, groupAlias :: Parser String st String
 
@@ -49,11 +53,16 @@ groupAlias = do
     where
        nickname = many (noneOf " ,\n")
        nicknameSep = skipMany (char ' ') >> char ',' >> skipMany (char ' ')
+
 validAlias = do
     _ <- preAlias >>
      manyTill (noneOf "<>\n") (try ( angEmail <|> emailAddress ))
     notFollowedBy anyToken <?> "end of input"
     return "valid single alias"
+
+---------------------------
+-- Email address parsers --
+---------------------------
 
 -- Using modified old emailAddress parser from Pandoc
 -- https://github.com/jgm/pandoc/blob/a71641a2a04c1d324163e16299f1e9821a26c9f9/src/Text/Pandoc/Parsing.hs
@@ -76,7 +85,7 @@ subdomain :: Parser String st String
 subdomain = many1 (emailChar <|> char '@')
 
 emailWord :: Parser String st String
-emailWord = many1 emailChar  -- ignores possibility of quoted strings
+emailWord = many1 emailChar -- ignores possibility of quoted strings
 
 emailAddress :: Parser String st String
 emailAddress = try $ do
