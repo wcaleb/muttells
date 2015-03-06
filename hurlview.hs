@@ -1,3 +1,4 @@
+import Data.List.Split (splitOneOf)
 import Network.URI (isURI)
 import System.IO
 
@@ -6,12 +7,16 @@ type LineNumber = Int
 type HasURL = Bool
 type Lines = [(LineNumber, HasURL, Line)]
 
-parseLines :: String -> Lines
-parseLines s = zip3 [1..] checkURL (lines s)
-   where checkURL = foldr (\x xs -> if any isURI $ words x then True:xs else False:xs) [] (lines s)
-
 sp :: Int -> String
 sp n = concat $ replicate n " "
+
+-- Builds Lines out of raw string
+parseLines :: String -> Lines
+parseLines s = zip3 [1..] checkURL (lines s)
+   where isURI' x = isURI x && (last x /= ':')
+         checkURL = foldr (\x xs -> if any isURI' $ splitOneOf " \"<>()" x
+                                       then True:xs
+                                       else False:xs) [] (lines s)
 
 -- Prints out Lines, numbering those that have a URL 
 numberLines :: Lines -> [String]
