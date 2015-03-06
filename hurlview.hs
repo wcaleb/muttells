@@ -1,15 +1,20 @@
 import Network.URI (isURI)
 import System.IO
 
-parseLines :: String -> [(Int, Bool, String)]
-parseLines s = zip3 [1..] hasURL (lines s)
-   where hasURL = foldr (\x xs -> if any isURI $ words x then True:xs else False:xs) [] (lines s)
+type Line = String
+type LineNumber = Int
+type HasURL = Bool
+type Lines = [(LineNumber, HasURL, Line)]
+
+parseLines :: String -> Lines
+parseLines s = zip3 [1..] checkURL (lines s)
+   where checkURL = foldr (\x xs -> if any isURI $ words x then True:xs else False:xs) [] (lines s)
 
 sp :: Int -> String
 sp n = concat $ replicate n " "
 
 -- Prints out Lines, numbering those that have a URL 
-numberLines :: [(Int, Bool, String)] -> [String]
+numberLines :: Lines -> [String]
 numberLines [] = []
 numberLines ((n,u,l):ts) = if u
                     then (sp 2 ++ show n ++ sp 2 ++ l):numberLines ts
