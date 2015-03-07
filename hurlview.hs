@@ -28,13 +28,12 @@ parseLines s = zip3 [1..] checkURL (lines s)
 numberLines :: Lines -> [String]
 numberLines [] = []
 numberLines ((n,u,l):ts) = if u
-                    then (sp 2 ++ show n ++ sp 2 ++ l):numberLines ts
-                    else (sp 5 ++ l):numberLines ts
-
-getURL :: String -> Int -> [String]
-getURL s n = foldr (\x xs -> if isURI' x then x:xs else xs) [] (splitOneOf " \"<>()" $ lines s !! n)
+                    then (marg n ++ show n ++ " -> " ++ l):numberLines ts
+                    else (sp 8 ++ l):numberLines ts
+            where marg n = if n > 9 then sp 2 else if n > 99 then sp 1 else sp 3
 
 -- Word wrapping functions
+-- Adapted from https://gist.github.com/moreindirection/524460
 trim :: String -> String
 trim = trimAndReverse . trimAndReverse
   where trimAndReverse = reverse . dropWhile isSpace
@@ -47,19 +46,23 @@ wrapLine :: Int -> String -> [String]
 wrapLine maxLen line 
   | length line <= maxLen  = [line]
   | any isSpace beforeMax  = beforeSpace : wrapLine maxLen (afterSpace ++ afterMax)
-  | otherwise              = beforeMax : wrapLine maxLen afterMax
+  | otherwise              = [line]
     where (beforeMax, afterMax) = splitAt maxLen line
           (beforeSpace, afterSpace) = reverseBreak isSpace beforeMax
+
+-- Retrieve URL(s) from a line
+getURL :: String -> Int -> [String]
+getURL s n = foldr (\x xs -> if isURI' x then x:xs else xs) [] (splitOneOf " \"<>()" $ lines s !! n)
 
 main :: IO ()
 main = do 
    contents <- getContents
-   let contents' = wrapLines contents
-   let parsedLines = parseLines contents'
+   let wrappedLines = wrapLines contents
+   let parsedLines = parseLines wrappedLines
    putStrLn $ unlines (numberLines parsedLines)
    tty <- openFile "/dev/tty" ReadMode
    putStrLn "Which link do you want?"
    choice <- hGetLine tty
    let n = read choice :: Int
    hClose tty
-   putStrLn $ "You chose " ++ unlines (getURL contents' (n-1))
+   putStrLn $ "You chose " ++ unlines (getURL wrappedLines (n-1))
