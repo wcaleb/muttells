@@ -12,18 +12,23 @@ type Lines = [(LineNumber, HasURL, Line)]
 sp :: Int -> String
 sp n = concat $ replicate n " "
 
+-- Make isURI less greedy by throwing away bare schemes
 isURI' :: String -> Bool
 isURI' x = isURI x && (last x /= ':')
 
-wrapLines :: String -> String
-wrapLines s = unlines $ map trim $ concatMap wrapLine (lines s)
+-- Split words on spaces and punctuation that might surround a URL
+words' :: String -> [String]
+words' = splitOneOf " \"<>()"
+
+wrapLines :: String -> [String]
+wrapLines s = map trim $ concatMap wrapLine (lines s)
 
 -- Builds Lines out of raw strings
-parseLines :: String -> Lines
-parseLines s = zip3 [1..] checkURL (lines s)
-   where checkURL = foldr (\x xs -> if any isURI' $ splitOneOf " \"<>()" x
+parseLines :: [String] -> Lines
+parseLines s = zip3 [1..] checkURL s
+   where checkURL = foldr (\x xs -> if any isURI' $ words' x
                                        then True:xs
-                                       else False:xs) [] (lines s)
+                                       else False:xs) [] s
 
 -- Number lines that have a URL
 numberLines :: Lines -> [String]
@@ -53,8 +58,8 @@ wrapLine line
           maxLen = 78
 
 -- Retrieve URL(s) from a line
-getURL :: String -> Int -> [String]
-getURL s n = foldr (\x xs -> if isURI' x then x:xs else xs) [] (splitOneOf " \"<>()" $ lines s !! n)
+getURL :: [String] -> Int -> [String]
+getURL s n = foldr (\x xs -> if isURI' x then x:xs else xs) [] (words' $ s !! n)
 
 main :: IO ()
 main = do 
@@ -69,3 +74,5 @@ main = do
    hClose tty
    putStrLn $ "You chose " ++ unlines (getURL wrappedLines (n-1))
    callCommand ("open \"" ++ init (unlines (getURL wrappedLines (n-1))) ++ "\"")
+
+-- TODO: capturing the output of `tput lines` and `tput cols` to make pager for output
