@@ -20,9 +20,6 @@ isURI' x = isURI x && (last x /= ':')
 words' :: String -> [String]
 words' = splitOneOf " \"<>()"
 
-wrapLines :: String -> [String]
-wrapLines s = map trim $ concatMap wrapLine (lines s)
-
 -- Builds Lines out of raw strings
 parseLines :: [String] -> Lines
 parseLines s = zip3 [1..] checkURL s
@@ -56,6 +53,9 @@ wrapLine line
     where (beforeMax, afterMax) = splitAt maxLen line
           (beforeSpace, afterSpace) = reverseBreak isSpace beforeMax
           maxLen = 78
+
+wrapLines :: String -> [String]
+wrapLines s = map trim $ concatMap wrapLine (lines s)
 
 -- Retrieve URL(s) from a line
 getURL :: [String] -> Int -> [String]
