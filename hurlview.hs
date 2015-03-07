@@ -17,6 +17,8 @@ isURI' :: String -> Bool
 isURI' x = isURI x && (last x /= ':')
 
 -- Split words on spaces and punctuation that might surround a URL
+-- This doesn't quite work, though, because URLs can contain parentheses.
+-- TODO: Implement parser to find URLs.
 words' :: String -> [String]
 words' = splitOneOf " \"<>()"
 
